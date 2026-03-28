@@ -1440,18 +1440,37 @@ AVAILABLE SKILLS (use run_skill tool or follow the steps directly):
 
 Reply in the same language as the user.`;
 
-// Convert our tools to OpenAI function format
-const openaiTools = tools.map(t => ({
-  type: "function" as const,
-  function: {
-    name: t.name,
-    description: t.description,
-    parameters: t.input_schema,
-  },
-}));
+// Convert tools to OpenAI function format — only send core tools to avoid overwhelming the LLM
+const CORE_TOOLS = [
+  "navigate", "back", "forward", "reload",
+  "click", "click_text", "click_at", "double_click", "right_click",
+  "type_text", "press_key",
+  "scroll", "scroll_to_element",
+  "screenshot", "get_page_info", "get_page_text", "get_elements",
+  "find_by_text", "find_by_aria", "find_by_role", "find_by_name",
+  "evaluate_js", "wait", "wait_for_element",
+  "list_tabs", "new_tab", "close_tab",
+  "get_cookies", "set_viewport",
+  "enable_stealth", "block_urls", "auto_dismiss_dialogs",
+  "run_skill", "list_skills",
+];
+
+const openaiTools = tools
+  .filter(t => CORE_TOOLS.includes(t.name))
+  .map(t => ({
+    type: "function" as const,
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: {
+        ...t.input_schema,
+        required: (t.input_schema as any).required || [],
+      },
+    },
+  }));
 
 async function callLLM(messages: Message[]): Promise<any> {
-  const body = {
+  const body: any = {
     model: AI_MODEL,
     max_tokens: 4096,
     messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
