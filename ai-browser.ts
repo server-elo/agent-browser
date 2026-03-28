@@ -358,6 +358,10 @@ const tools = [
   // DOM domain (direct CDP DOM access)
   { name: "get_html", description: "Get the HTML of an element via CDP DOM domain", input_schema: { type: "object", properties: { selector: { type: "string" } }, required: ["selector"] } },
   { name: "remove_element", description: "Remove an element from the page", input_schema: { type: "object", properties: { selector: { type: "string" } }, required: ["selector"] } },
+
+  // === Skills System ===
+  { name: "run_skill", description: "Run a pre-built automation skill by name (e.g. linkedin_connect, scrape_emails, test_responsive)", input_schema: { type: "object", properties: { name: { type: "string", description: "Skill name" }, args: { type: "string", description: "Additional context (URL, count, text, etc)" } }, required: ["name"] } },
+  { name: "list_skills", description: "List all available pre-built skills", input_schema: { type: "object", properties: { category: { type: "string", description: "Filter by category: linkedin, scraping, forms, testing, social, data, utility" } } } },
 ];
 
 // ============================================================================
@@ -1381,6 +1385,20 @@ delete navigator.__proto__.webdriver;`
       return `Removed: ${input.selector}`;
     }
 
+    // === Skills System ===
+    case "run_skill": {
+      const skill = findSkill(input.name);
+      if (!skill) return `Skill not found: ${input.name}. Use list_skills to see available skills.`;
+      return `SKILL: ${skill.name}\n\nFollow these steps to complete "${skill.description}":\n\n${skill.steps}\n\nAdditional context from user: ${input.args || "(none)"}`;
+    }
+    case "list_skills": {
+      if (input.category) {
+        const filtered = skills.filter(s => s.category === input.category);
+        return filtered.map(s => `${s.name} — ${s.description}`).join("\n");
+      }
+      return getSkillList();
+    }
+
     default:
       return `Unknown tool: ${name}`;
   }
@@ -1391,6 +1409,9 @@ delete navigator.__proto__.webdriver;`
 // ============================================================================
 
 type Message = { role: "system" | "user" | "assistant" | "tool"; content?: any; tool_calls?: any[]; tool_call_id?: string; name?: string };
+
+// Import skills
+import { skills, getSkillList, findSkill } from "./skills";
 
 const SYSTEM_PROMPT = `You are a browser automation assistant. You control a Chrome browser using tools (function calls).
 
@@ -1408,10 +1429,14 @@ CRITICAL RULES:
 6. For search: click the search input, type text, press Enter.
 7. For forms: use type_text for each field, or fill_form for multiple fields.
 8. Use screenshot to show results when helpful.
+9. When the user asks for a task that matches a SKILL, follow its steps exactly.
 
 SCROLL PATTERN (from binary):
 The browser engine uses this sequence internally: scrollIntoView → wait for element stability (2 frames) → check not occluded → click.
 When you need elements not yet visible: scroll down 400-800px → wait 1000ms → find_by_text or get_elements again.
+
+AVAILABLE SKILLS (use run_skill tool or follow the steps directly):
+` + skills.map(s => `- ${s.name}: ${s.description}`).join("\n") + `
 
 Reply in the same language as the user.`;
 
