@@ -1,0 +1,13 @@
+{
+  "name": "agent-browser",
+  "version": "1.0.0",
+  "description": "AI-powered browser automation via CDP — 80 tools, works with Ollama, LM Studio, OpenAI, Groq",
+  "main": "ai-browser.ts",
+  "scripts": {
+    "start": "bun run ai-browser.ts",
+    "dev": "bun run ai-browser.ts"
+  },
+  "author": "Lorenc",
+  "license": "MIT",
+  "keywords": ["browser", "automation", "ai", "cdp", "chrome", "ollama", "lm-studio", "openai"]
+}
