@@ -73,7 +73,7 @@ if (!chromePath) { console.log("Chrome not found."); process.exit(1); }
 
 const port = 9222 + Math.floor(Math.random() * 1000);
 const dataDir = `/tmp/bun-ai-browser-${process.pid}`;
-const startUrl = process.argv[2] || "https://google.com";
+const startUrl = process.argv[2] || "about:blank";
 
 console.log("Launching Chrome...");
 const chrome = Bun.spawn([
